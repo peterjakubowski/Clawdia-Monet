@@ -1,0 +1,24 @@
+---
+title: Clawdia Monet
+theme: default
+
+---
+flowchart TB
+    User[User]
+    Upload[Upload]
+    IsCat[Is Cat?]
+    Yes[Cat]
+    No[Not Cat]
+    Exit[Exit]
+    Draw[Draw]
+    Paint[Paint]
+    Instruct[Instruct]
+
+    User --Image --> Upload
+    Upload --Check Image --> IsCat
+    IsCat --Yes -->Yes
+    IsCat --No -->No
+    No --> Exit
+    Yes --> Instruct
+    Instruct --> Draw
+    Instruct --> Paint
