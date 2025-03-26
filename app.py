@@ -18,22 +18,13 @@ import os
 from dotenv import load_dotenv
 import time
 
-# =====================
-# === Constant Vars ===
-# =====================
-
-SAFETY_SETTINGS = [types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                                       threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH),
-                   types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                                       threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH),
-                   types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                                       threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH),
-                   types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                                       threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH)]
 
 # ========================
 # === Streamlit Layout ===
 # ========================
+
+with Image.open("images/clawdia_monet.jpg") as icon:
+    st.set_page_config(page_title="Clawdia Monet", page_icon=icon)
 
 header = st.empty()
 
@@ -198,7 +189,7 @@ def cat_check(_image: Image) -> BaseModel:
     """)
 
     _config = types.GenerateContentConfig(system_instruction=_sys_inst.render(),
-                                          temperature=1.0,
+                                          temperature=1.2,
                                           top_p=0.95,
                                           response_mime_type='application/json',
                                           response_schema=CatCheck
@@ -232,17 +223,17 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
     # Rules
 
     * I give you two images, the original image, and a sketch of the image.
-    * Focus on explaining how to turn the drawing into an oil painting.
+    * Focus on explaining how to turn the drawing into a painting.
     * Instruct Clawdia to paint the cat with such detail that the patron will be able to recognize that it is their cat.
     * Be sure to describe the entire scene and background.
     * Return the finished instructions.
 
     """)
 
-    _prompt = "Write detailed instructions for Clawdia Monet to make an oil painting from these images."
+    _prompt = "Write detailed instructions for Clawdia Monet to make a painting from these images."
 
     _config = types.GenerateContentConfig(system_instruction=_sys_inst.render(),
-                                          temperature=1.0,
+                                          temperature=1.3,
                                           top_p=0.95,
                                           response_modalities=['Text'],
                                           )
@@ -264,22 +255,23 @@ def cat_sketch(_image: Image) -> Image:
 
     _prompt = Template("""You are Clawdia Monet, an artist that draws and paints cats.
     You have been commissioned to paint someone's adored cat.
-    Your patron has given you an image of their cat, you must wow them with your artistic nature.
+    Your patron has given you an image of their cat to sketch from.
     
-    Before you begin painting, you must sketch out the image.
-    Use this image of a cat as a reference and sketch a hand drawn image.
+    Before you begin painting, you must sketch out the composition.
+    Turn this reference image of a cat into a hand drawn image.
     
     # Rules
     
-    * Draw the cat with black and white charcoal on brown paper.
+    * Draw the cat with pencil on brown paper.
     * Be sure to draw the entire scene and background.
+    * The drawing should essentially be a copy of the reference image.
     * Return the finished drawing.
     * Send a short message to the patron along with your finished work, no more than a sentence.
     
     """)
 
     _config = types.GenerateContentConfig(response_modalities=['Text', 'Image'],
-                                          temperature=0.6,
+                                          temperature=0.9,
                                           top_p=0.95)
 
     _chat = st.session_state.client.chats.create(model="gemini-2.0-flash-exp",
@@ -308,7 +300,7 @@ def cat_paint(_instructions: str, _image: Image) -> Image:
     
     # Rules
     
-    * Paint the cat with oil paint.
+    * Paint a picture of the cat!
     * Be sure to paint the entire scene and background.
     * Return the finished painting.
     * Send a short message to the patron along with your finished work, no more than a sentence.
@@ -417,11 +409,12 @@ def cat_check_workflow():
             st.session_state.is_cat = response
 
     if st.session_state.is_cat.is_cat:
-        banner.write(st.session_state.is_cat.observation)
-        time.sleep(3)
+        # banner.write(st.session_state.is_cat.observation)
+        # time.sleep(3)
         return st.rerun()
 
     banner.warning(st.session_state.is_cat.observation)
+    buttons.button("Start Over", on_click=clear_session)
 
     return st.stop()
 
@@ -432,6 +425,8 @@ def draw_cat_workflow():
 
     :return:
     """
+
+    banner.write(st.session_state.is_cat.observation)
 
     with banner, st.spinner("Sketching...", show_time=True):
         body.image(st.session_state.image)
@@ -466,6 +461,8 @@ def draw_cat_workflow():
 
     with but2:
         st.button("Start Painting", use_container_width=True, type="primary")
+
+    st.button("Start Over", on_click=clear_session)
 
     return st.stop()
 
