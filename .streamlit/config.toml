@@ -4,3 +4,14 @@ backgroundColor="#FFFFFF"
 secondaryBackgroundColor="#F0F2F6"
 textColor="#31333F"
 font="monospace"
+
+[client]
+showErrorDetails="type"
+toolbarMode="minimal"
+
+[server]
+fileWatcherType="none"
+maxUploadSize=50
+
+[browser]
+gatherUsageStats=false
