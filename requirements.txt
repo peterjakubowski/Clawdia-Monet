@@ -5,3 +5,4 @@ jinja2
 pillow~=11.1.0
 https://github.com/peterjakubowski/Image-Editing-Utilities/archive/refs/heads/main.zip
 dotenv
+beautifulsoup4
