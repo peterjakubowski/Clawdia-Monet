@@ -71,7 +71,7 @@ def main():
 
     subprocess.run(["cp", src_favicon, favicon_path])
 
-    subprocess.run(["streamlit", "run", "app.py"])
+    # subprocess.run(["streamlit", "run", "app.py"])
 
     return
 
