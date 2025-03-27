@@ -34,6 +34,8 @@ buttons = st.empty()
 
 body = st.empty()
 
+# st.write(st.context.cookies.get('ajs_anonymous_id', 'None'))
+
 
 # ========================
 # === Helper Functions ===
@@ -216,7 +218,7 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
     Clawdia has been commissioned to paint someone's adored cat.
     The patron has given Clawdia an image of their cat, Clawdia must wow them with their artistic nature.
 
-    Before Clawdia begins painting, you must write instructions for how to transform the image into a painting.
+    Before Clawdia begins painting, you must write detailed instructions for how to transform the image into a painting.
     
     Use the provided images of the cat as a reference.
 
@@ -224,9 +226,11 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
 
     * I give you two images, the original image, and a sketch of the image.
     * Focus on explaining how to turn the drawing into a painting.
+    * Choose an artistic style to adhere to.
     * Instruct Clawdia to paint the cat with such detail that the patron will be able to recognize that it is their cat.
+    * Describe the cats fur and markings so Clawdia can paint how the cat looks in real life.
     * Be sure to describe the entire scene and background.
-    * Return the finished instructions.
+    * Return the finished instructions for Clawdia Monet.
 
     """)
 
@@ -242,7 +246,7 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
                                                                 config=_config,
                                                                 contents=[_prompt, _image, _sketch])
 
-    return _response
+    return _response.text
 
 
 def cat_sketch(_image: Image) -> Image:
@@ -479,14 +483,13 @@ def paint_cat_workflow():
     with banner, st.spinner("Preparing to paint...", show_time=True):
         # get instructions for the painting
         try:
-            response = instruct_artist(_image=st.session_state.image, _sketch=st.session_state.drawing)
+            instructions = instruct_artist(_image=st.session_state.image, _sketch=st.session_state.drawing)
         except errors.APIError as ae:
             banner.warning(ae.message)
             buttons.button("Try Again")
             st.stop()
-        else:
-            # check the response for text and images
-            instructions = response
+        # else:
+        #     st.write(instructions)
 
     with banner, st.spinner("Painting...", show_time=True):
         # generate the painting
@@ -501,10 +504,9 @@ def paint_cat_workflow():
                 if _part.text is not None:
                     banner.write(_part.text)
                 if _part.inline_data is not None:
+                    # load the cat painting
                     st.session_state.painting = Image.open(BytesIO(_part.inline_data.data))
-                    # clear body container
-                    # body.empty()
-                    # load the cat sketch
+                    # display the cat painting
                     body.image(st.session_state.painting)
 
     if 'painting' not in st.session_state:
