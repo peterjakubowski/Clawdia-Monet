@@ -28,11 +28,11 @@ with Image.open("images/clawdia_monet.jpg") as icon:
 
 header = st.empty()
 
-working = st.empty()
-
 banner = st.empty()
 
 buttons = st.empty()
+
+working = st.empty()
 
 body = st.empty()
 
@@ -502,16 +502,18 @@ def paint_cat_workflow():
         except errors.APIError as ae:
             banner.warning(ae.message)
             st.stop()
-        else:
-            # check the response for text and images
-            for _part in response.candidates[0].content.parts:
-                if _part.text is not None:
-                    banner.write(_part.text)
-                if _part.inline_data is not None:
-                    # load the cat painting
-                    st.session_state.painting = Image.open(BytesIO(_part.inline_data.data))
-                    # display the cat painting
-                    body.image(st.session_state.painting)
+
+    working.empty()
+
+    # check the response for text and images
+    for _part in response.candidates[0].content.parts:
+        if _part.text is not None:
+            banner.write(_part.text)
+        if _part.inline_data is not None:
+            # load the cat painting
+            st.session_state.painting = Image.open(BytesIO(_part.inline_data.data))
+            # display the cat painting
+            body.image(st.session_state.painting)
 
     if 'painting' not in st.session_state:
         st.warning("Something went wrong. Try again.")
