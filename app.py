@@ -516,7 +516,7 @@ def paint_cat_workflow():
             body.image(st.session_state.painting)
 
     if 'painting' not in st.session_state:
-        st.warning("Something went wrong. Try again.")
+        banner.warning("Something went wrong. Try again.")
 
     # create two columns in the buttons container
     col1, col2 = buttons.columns(2, gap="small")
