@@ -10,8 +10,11 @@ showErrorDetails="type"
 toolbarMode="minimal"
 
 [server]
+port=8080
+headless=true
 fileWatcherType="none"
 maxUploadSize=50
+enableStaticServing=false
 
 [browser]
 gatherUsageStats=false
