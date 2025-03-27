@@ -4,4 +4,4 @@ COPY . /app
 EXPOSE 8080
 RUN pip install -r requirements.txt
 RUN python run.py
-ENTRYPOINT ["streamlit", "run app.py", "--server.port 8080", "--server.headless true"]
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port 8080", "--server.headless true"]
