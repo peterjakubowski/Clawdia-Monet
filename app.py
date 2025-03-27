@@ -28,7 +28,9 @@ with Image.open("images/clawdia_monet.jpg") as icon:
 
 header = st.empty()
 
-banner = st.container()
+working = st.empty()
+
+banner = st.empty()
 
 buttons = st.empty()
 
@@ -430,27 +432,30 @@ def draw_cat_workflow():
     :return:
     """
 
-    banner.write(st.session_state.is_cat.observation)
+    with banner.container():
+        st.write(st.session_state.is_cat.observation)
 
-    with banner, st.spinner("Sketching...", show_time=True):
+    with working.container(), st.spinner("Sketching...", show_time=True):
         body.image(st.session_state.image)
         # check if this is a cat
         try:
             response = cat_sketch(_image=st.session_state.image)
         except errors.APIError as ae:
-            banner.warning(ae.message)
+            st.warning(ae.message)
             st.stop()
-        else:
-            # check the response for text and images
-            for _part in response.candidates[0].content.parts:
-                if _part.text is not None:
-                    banner.write(_part.text)
-                if _part.inline_data is not None:
-                    st.session_state.drawing = Image.open(BytesIO(_part.inline_data.data))
-                    # clear body container
-                    # body.empty()
-                    # load the cat sketch
-                    body.image(st.session_state.drawing)
+
+    working.empty()
+    banner.empty()
+
+    # check the response for text and images
+    with banner.container():
+        for _part in response.candidates[0].content.parts:
+            if _part.text is not None:
+                st.write(_part.text)
+            if _part.inline_data is not None:
+                st.session_state.drawing = Image.open(BytesIO(_part.inline_data.data))
+                # load the cat sketch
+                body.image(st.session_state.drawing)
 
     if 'drawing' not in st.session_state:
         st.warning("Something went wrong. Try again.")
@@ -478,20 +483,19 @@ def paint_cat_workflow():
     :return:
     """
 
+    # show the drawing
     body.image(st.session_state.drawing)
 
-    with banner, st.spinner("Preparing to paint...", show_time=True):
+    with working.container(), st.spinner("Preparing to paint...", show_time=True):
         # get instructions for the painting
         try:
             instructions = instruct_artist(_image=st.session_state.image, _sketch=st.session_state.drawing)
         except errors.APIError as ae:
-            banner.warning(ae.message)
+            st.warning(ae.message)
             buttons.button("Try Again")
             st.stop()
-        # else:
-        #     st.write(instructions)
 
-    with banner, st.spinner("Painting...", show_time=True):
+    with working.container(), st.spinner("Painting...", show_time=True):
         # generate the painting
         try:
             response = cat_paint(_instructions=instructions, _image=st.session_state.drawing)
