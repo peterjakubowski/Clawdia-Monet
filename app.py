@@ -163,8 +163,8 @@ def cat_check(_image: Image) -> BaseModel:
     """
 
     _sys_inst = Template("""You are Clawdia Monet, an artist that draws and paints cats.
-    You have been commissioned to paint someone's adored cat.
-    Your patron has given you an image of their cat, you must wow them with your artistic nature.
+    You have been commissioned to paint someone's adored cat or cats.
+    Your patron has given you an image of their cat or cats, you must wow them with your artistic nature.
     
     You are first checking their image for the presence of cats before you paint them.
     
@@ -174,6 +174,9 @@ def cat_check(_image: Image) -> BaseModel:
     * If there's a cat in the image, then you will be able to paint a picture from the image.
     * If there is not a cat in the image, then the photo is no use to you, since you only paint cats.
     * Send a short message to the patron about their image and what you'll do next.
+    * Be creative with your message.
+    * Comment about the appearance of their cat and say something you like about it.
+    * If there's no cat in the image, express disappointment in receiving a photo with no cats.
 
     # Structured Response
 
@@ -187,26 +190,30 @@ def cat_check(_image: Image) -> BaseModel:
     * 'observation': Brief message to the patron about your observations of their image.
 
     Example 1: I couldn't find a cat in this image. I only paint cats.
-    Example 2: What a cute cat! This will be a beautiful painting of a cat!
+    Example 2: What cute cats! This will be a beautiful painting of a cat!
     Example 3: Adorable kitten :-) I'll get started on a sketch.
+    Example 4: This is an interesting photo, but I don't see any cats! Do you have any photos of cats?
+    Example 5: Your cat looks so sweet! 
 
     """)
 
     _config = types.GenerateContentConfig(system_instruction=_sys_inst.render(),
-                                          temperature=1.2,
+                                          temperature=1.5,
                                           top_p=0.95,
                                           response_mime_type='application/json',
                                           response_schema=CatCheck
                                           )
-
-    _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash-exp",
-                                                                config=_config,
-                                                                contents=["Is there a cat in this image?", _image])
+    try:
+        _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash-lite",
+                                                                    config=_config,
+                                                                    contents=["Is there a cat in this image?", _image])
+    except errors.APIError as ae:
+        raise ae
 
     return _response.parsed
 
 
-def instruct_artist(_image: Image, _sketch: Image) -> str:
+def instruct_artist(_image: Image, _sketch: Image) -> str | errors.APIError:
     """
     Write instructions for the artist to paint the cat in the image.
 
@@ -217,8 +224,8 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
 
     _sys_inst = Template("""You are an artist's assistant and excel at writing instructions for the artist to follow.
     You work for Clawdia Monet, an artist that draws and paints cats.
-    Clawdia has been commissioned to paint someone's adored cat.
-    The patron has given Clawdia an image of their cat, Clawdia must wow them with their artistic nature.
+    Clawdia has been commissioned to paint someone's adored cat or cats.
+    The patron has given Clawdia an image of their cat or cats, Clawdia must wow them with their artistic nature.
 
     Before Clawdia begins painting, you must write detailed instructions for how to transform the image into a painting.
     
@@ -229,8 +236,8 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
     * I give you two images, the original image, and a sketch of the image.
     * Focus on explaining how to turn the drawing into a painting.
     * Choose an artistic style to adhere to.
-    * Instruct Clawdia to paint the cat with such detail that the patron will be able to recognize that it is their cat.
-    * Describe the cats fur and markings so Clawdia can paint how the cat looks in real life.
+    * Instruct Clawdia to paint the cat or cats with such detail that the patron will be able to recognize that it is their cat.
+    * Describe the cat's fur and markings so Clawdia can paint how the cat looks in real life.
     * Be sure to describe the entire scene and background.
     * Return the finished instructions for Clawdia Monet.
 
@@ -244,14 +251,20 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
                                           response_modalities=['Text'],
                                           )
 
-    _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash-001",
-                                                                config=_config,
-                                                                contents=[_prompt, _image, _sketch])
+    try:
+        _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash-001",
+                                                                    config=_config,
+                                                                    contents=[_prompt, _image, _sketch])
+    except errors.APIError as ae:
+        raise ae
+
+    if not _response.text:
+        raise Exception("Painting instructions error")
 
     return _response.text
 
 
-def cat_sketch(_image: Image) -> Image:
+def cat_sketch(_image: Image) -> Image.Image:
     """
     Sketch the cat in the uploaded image.
 
@@ -260,15 +273,15 @@ def cat_sketch(_image: Image) -> Image:
     """
 
     _prompt = Template("""You are Clawdia Monet, an artist that draws and paints cats.
-    You have been commissioned to paint someone's adored cat.
-    Your patron has given you an image of their cat to sketch from.
+    You have been commissioned to paint someone's adored cat or cats.
+    Your patron has given you an image of their cat or cats to sketch from.
     
     Before you begin painting, you must sketch out the composition.
     Turn this reference image of a cat into a hand drawn image.
     
     # Rules
     
-    * Draw the cat with pencil on brown paper.
+    * Draw the cat or cats with pencil on brown paper.
     * Be sure to draw the entire scene and background.
     * The drawing should essentially be a copy of the reference image.
     * Return the finished drawing.
@@ -282,13 +295,16 @@ def cat_sketch(_image: Image) -> Image:
 
     _chat = st.session_state.client.chats.create(model="gemini-2.0-flash-exp",
                                                  config=_config)
+    try:
+        _response = _chat.send_message(message=[_prompt.render(), _image])
 
-    _response = _chat.send_message(message=[_prompt.render(), _image])
+    except errors.APIError as ae:
+        raise ae
 
     return _response
 
 
-def cat_paint(_instructions: str, _image: Image) -> Image:
+def cat_paint(_instructions: str, _image: Image) -> Image.Image | errors.APIError:
     """
     Paint the cat in the sketched image.
 
@@ -298,20 +314,26 @@ def cat_paint(_instructions: str, _image: Image) -> Image:
     """
 
     _prompt = Template("""You are Clawdia Monet, an artist that draws and paints cats.
-    You have been commissioned to paint someone's adored cat.
-    Your patron has given you an image of their cat, you must wow them with your artistic nature.
+    You have been commissioned to paint someone's adored cat(s).
+    Your patron has given you an image of their cat(s), you must wow them with your artistic nature.
     
-    You just finished sketching out the cat for your painting, so its time to paint!
-    Use this sketch of a cat as a reference and turn it into a painting.
+    You just finished sketching out the cat(s) for your painting, so its time to paint!
+    Use this sketch of a cat(s) as a reference and turn it into a painting.
     
     # Rules
     
-    * Paint a picture of the cat!
+    * Paint a picture of the cat(s)!
     * Be sure to paint the entire scene and background.
     * Return the finished painting.
+    
+    # Response
+    
     * Send a short message to the patron along with your finished work, no more than a sentence.
     
-    # Instructions to follow
+    Example 1: Here is the finished painting of your beautiful cat amongst the cherry blossoms, I hope you adore it!
+    Example 2: Finished! Here is the painting of your cats enjoying a winter skate with many friends on a crisp, snowy day!
+    
+    # Instructions you must follow from your assistant
     
     {{instructions}}
     
@@ -324,7 +346,11 @@ def cat_paint(_instructions: str, _image: Image) -> Image:
     _chat = st.session_state.client.chats.create(model="gemini-2.0-flash-exp",
                                                  config=_config)
 
-    _response = _chat.send_message(message=[_prompt.render(instructions=_instructions), _image])
+    try:
+        _response = _chat.send_message(message=[_prompt.render(instructions=_instructions), _image])
+
+    except errors.APIError as ae:
+        raise ae
 
     return _response
 
@@ -494,6 +520,9 @@ def paint_cat_workflow():
             st.warning(ae.message)
             buttons.button("Try Again")
             st.stop()
+        except Exception as ex:
+            st.warning(ex)
+            st.button("Try Again")
 
     with working.container(), st.spinner("Painting...", show_time=True):
         # generate the painting
@@ -506,17 +535,18 @@ def paint_cat_workflow():
     working.empty()
 
     # check the response for text and images
-    for _part in response.candidates[0].content.parts:
-        if _part.text is not None:
-            banner.write(_part.text)
-        if _part.inline_data is not None:
-            # load the cat painting
-            st.session_state.painting = Image.open(BytesIO(_part.inline_data.data))
-            # display the cat painting
-            body.image(st.session_state.painting)
+    with banner.container():
+        for _part in response.candidates[0].content.parts:
+            if _part.text is not None:
+                st.write(_part.text.strip())
+            if _part.inline_data is not None:
+                # load the cat painting
+                st.session_state.painting = Image.open(BytesIO(_part.inline_data.data))
+                # display the cat painting
+                body.image(st.session_state.painting)
 
-    if 'painting' not in st.session_state:
-        banner.warning("Something went wrong. Try again.")
+        if 'painting' not in st.session_state:
+            st.warning("Something went wrong. Try again.")
 
     # create two columns in the buttons container
     col1, col2 = buttons.columns(2, gap="small")
@@ -566,7 +596,7 @@ def app():
 
     else:
 
-        banner.write("Here we are!")
+        banner.write("Whoa! How did you end up here?")
 
         buttons.button("Start Over", on_click=clear_session)
 
