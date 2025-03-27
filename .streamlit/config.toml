@@ -17,4 +17,4 @@ maxUploadSize=50
 enableStaticServing=false
 
 [browser]
-gatherUsageStats=false
+gatherUsageStats=true
