@@ -16,7 +16,7 @@ from google.genai import errors
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
-import time
+# import time
 
 
 # ========================
@@ -213,7 +213,7 @@ def cat_check(_image: Image) -> BaseModel:
     return _response.parsed
 
 
-def instruct_artist(_image: Image, _sketch: Image) -> str | errors.APIError:
+def instruct_artist(_image: Image, _sketch: Image) -> str:
     """
     Write instructions for the artist to paint the cat in the image.
 
@@ -236,7 +236,7 @@ def instruct_artist(_image: Image, _sketch: Image) -> str | errors.APIError:
     * I give you two images, the original image, and a sketch of the image.
     * Focus on explaining how to turn the drawing into a painting.
     * Choose an artistic style to adhere to.
-    * Instruct Clawdia to paint the cat or cats with such detail that the patron will be able to recognize that it is their cat.
+    * Instruct Clawdia to paint the cat(s) with such detail that the patron will be able to recognize their cat(s).
     * Describe the cat's fur and markings so Clawdia can paint how the cat looks in real life.
     * Be sure to describe the entire scene and background.
     * Return the finished instructions for Clawdia Monet.
@@ -264,7 +264,7 @@ def instruct_artist(_image: Image, _sketch: Image) -> str | errors.APIError:
     return _response.text
 
 
-def cat_sketch(_image: Image) -> Image.Image:
+def cat_sketch(_image: Image) -> types.GenerateContentResponse:
     """
     Sketch the cat in the uploaded image.
 
@@ -304,7 +304,7 @@ def cat_sketch(_image: Image) -> Image.Image:
     return _response
 
 
-def cat_paint(_instructions: str, _image: Image) -> Image.Image | errors.APIError:
+def cat_paint(_instructions: str, _image: Image) -> types.GenerateContentResponse:
     """
     Paint the cat in the sketched image.
 
@@ -330,8 +330,8 @@ def cat_paint(_instructions: str, _image: Image) -> Image.Image | errors.APIErro
     
     * Send a short message to the patron along with your finished work, no more than a sentence.
     
-    Example 1: Here is the finished painting of your beautiful cat amongst the cherry blossoms, I hope you adore it!
-    Example 2: Finished! Here is the painting of your cats enjoying a winter skate with many friends on a crisp, snowy day!
+    Example 1: Here is the finished painting of your beautiful cat, I hope you adore it!
+    Example 2: I finished the painting of your cats enjoying a winter skate with many friends on a crisp, snowy day!
     
     # Instructions you must follow from your assistant
     
@@ -436,6 +436,7 @@ def cat_check_workflow():
             response = cat_check(_image=st.session_state.image)
         except errors.APIError as ae:
             banner.warning(ae.message)
+            buttons.button('Try Again')
             st.stop()
         else:
             st.session_state.is_cat = response
@@ -468,6 +469,7 @@ def draw_cat_workflow():
             response = cat_sketch(_image=st.session_state.image)
         except errors.APIError as ae:
             st.warning(ae.message)
+            buttons.button("Try Again")
             st.stop()
 
     working.empty()
@@ -517,12 +519,13 @@ def paint_cat_workflow():
         try:
             instructions = instruct_artist(_image=st.session_state.image, _sketch=st.session_state.drawing)
         except errors.APIError as ae:
-            st.warning(ae.message)
+            banner.warning(ae.message)
             buttons.button("Try Again")
             st.stop()
         except Exception as ex:
-            st.warning(ex)
-            st.button("Try Again")
+            banner.warning(ex)
+            buttons.button("Try Again")
+            st.stop()
 
     with working.container(), st.spinner("Painting...", show_time=True):
         # generate the painting
@@ -530,6 +533,7 @@ def paint_cat_workflow():
             response = cat_paint(_instructions=instructions, _image=st.session_state.drawing)
         except errors.APIError as ae:
             banner.warning(ae.message)
+            buttons.button("Try Again")
             st.stop()
 
     working.empty()
