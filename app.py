@@ -55,11 +55,11 @@ def api_config():
     # Check env vars for key
     if key := os.getenv('GOOGLE_API_KEY'):
         client = genai.Client(api_key=key)
-        st.success('api key accessed from env var')
+        # st.success('api key accessed from env var')
     # Check for a .env file and key
-    elif load_dotenv("gemini/.env") and (key := os.getenv('GOOGLE_API_KEY')):
+    elif load_dotenv(".env") and (key := os.getenv('GOOGLE_API_KEY')):
         client = genai.Client(api_key=key)
-        st.success('api key accessed from load_dotenv')
+        # st.success('api key accessed from load_dotenv')
     # Try to load key from streamlit secrets
     else:
         try:
@@ -71,7 +71,7 @@ def api_config():
             st.warning('Configuration failed. Missing API key.')
             st.stop()
         else:
-            st.success('api key accessed from st secrets')
+            # st.success('api key accessed from st secrets')
     if client:
         # Keep the client and model names in
         # st.session_state['models'] = genai_model_names
