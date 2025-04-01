@@ -55,7 +55,7 @@ def api_config():
     if key := os.getenv('GOOGLE_API_KEY'):
         client = genai.Client(api_key=key)
     # Check for a .env file and key
-    elif load_dotenv() and (key := os.getenv('GOOGLE_API_KEY')):
+    elif load_dotenv("gemini/.env") and (key := os.getenv('GOOGLE_API_KEY')):
         client = genai.Client(api_key=key)
     # Try to load key from streamlit secrets
     else:
