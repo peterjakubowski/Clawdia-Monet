@@ -70,7 +70,7 @@ def api_config():
         except FileNotFoundError:
             st.warning('Configuration failed. Missing API key.')
             st.stop()
-        else:
+        # else:
             # st.success('api key accessed from st secrets')
     if client:
         # Keep the client and model names in
