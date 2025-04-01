@@ -4,6 +4,7 @@
 # Date: 3/23/2025
 # Description: Clawdia Monet paints cats
 #
+import subprocess
 
 import streamlit as st
 from PIL import Image, ImageOps
@@ -51,12 +52,18 @@ def api_config():
 
     client = None
 
+    st.info(str(subprocess.run("pwd", text=True, capture_output=True).stdout))
+    st.info((subprocess.run(["ls", "-a"], text=True, capture_output=True).stdout).split("\n"))
+
+
     # Check env vars for key
     if key := os.getenv('GOOGLE_API_KEY'):
         client = genai.Client(api_key=key)
+        st.success('api key accessed from env var')
     # Check for a .env file and key
     elif load_dotenv("gemini/.env") and (key := os.getenv('GOOGLE_API_KEY')):
         client = genai.Client(api_key=key)
+        st.success('api key accessed from load_dotenv')
     # Try to load key from streamlit secrets
     else:
         try:
@@ -67,6 +74,8 @@ def api_config():
         except FileNotFoundError:
             st.warning('Configuration failed. Missing API key.')
             st.stop()
+        else:
+            st.success('api key accessed from st secrets')
     if client:
         # Keep the client and model names in
         # st.session_state['models'] = genai_model_names
