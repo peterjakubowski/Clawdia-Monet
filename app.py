@@ -58,6 +58,7 @@ def api_config():
 
     st.info(load_dotenv("gemini/.env", verbose=True, override=True))
     st.info(os.getenv('GOOGLE_API_KEY'))
+    st.info(os.environ)
 
     # Check env vars for key
     if key := os.getenv('GOOGLE_API_KEY'):
