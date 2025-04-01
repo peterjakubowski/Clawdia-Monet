@@ -54,7 +54,9 @@ def api_config():
 
     st.info(str(subprocess.run("pwd", text=True, capture_output=True).stdout))
     st.info((subprocess.run(["ls", "-a"], text=True, capture_output=True).stdout).split("\n"))
+    st.info((subprocess.run(["ls", "-a", "gemini"], text=True, capture_output=True).stdout).split("\n"))
 
+    st.info(load_dotenv("gemini/.env"))
 
     # Check env vars for key
     if key := os.getenv('GOOGLE_API_KEY'):
