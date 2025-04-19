@@ -4,7 +4,6 @@
 # Date: 3/23/2025
 # Description: Clawdia Monet paints cats
 #
-import subprocess
 
 import streamlit as st
 from PIL import Image, ImageOps
@@ -36,6 +35,14 @@ buttons = st.empty()
 working = st.empty()
 
 body = st.empty()
+
+buttons_low = st.empty()
+
+footer_html = """<div style='text-align: center;'>
+  <p><br><br>Developed with Google Gemini️ by <a href='http://petes.tools' target="_blank"> Pete's Tools</a></p>
+</div>"""
+
+footer = st.markdown(footer_html, unsafe_allow_html=True)
 
 # st.write(st.context.cookies.get('ajs_anonymous_id', 'None'))
 
@@ -209,7 +216,7 @@ def cat_check(_image: Image) -> BaseModel:
                                           response_schema=CatCheck
                                           )
     try:
-        _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash-lite",
+        _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash",  # "gemini-2.0-flash-lite"
                                                                     config=_config,
                                                                     contents=["Is there a cat in this image?", _image])
     except errors.APIError as ae:
@@ -277,16 +284,16 @@ def cat_sketch(_image: Image) -> types.GenerateContentResponse:
     :return:
     """
 
-    _prompt = Template("""You are Clawdia Monet, an artist that draws and paints cats.
+    _prompt = Template("""You are Clawdia Monet, an artist that loves drawing and painting pictures with cats in them.
     You have been commissioned to paint someone's adored cat or cats.
-    Your patron has given you an image of their cat or cats to sketch from.
+    Your patron has given you a photo of their cat or cats to sketch from.
     
     Before you begin painting, you must sketch out the composition.
-    Turn this reference image of a cat into a hand drawn image.
+    Turn this reference image into a hand drawn image.
     
     # Rules
     
-    * Draw the cat or cats with pencil on brown paper.
+    * Draw with pencil on brown paper.
     * Be sure to draw the entire scene and background.
     * The drawing should essentially be a copy of the reference image.
     * Return the finished drawing.
@@ -412,7 +419,7 @@ def upload_workflow():
     :return:
     """
 
-    banner.write("May I paint your cat? Upload an image to get started 😺")
+    banner.write("May I paint your cat? Upload a photo with a cat in it to get started 😺")
 
     if (file := body.file_uploader(label="Upload Cat Photo",
                                    accept_multiple_files=False,
@@ -491,7 +498,7 @@ def draw_cat_workflow():
                 body.image(st.session_state.drawing)
 
     if 'drawing' not in st.session_state:
-        st.warning("Something went wrong. Try again.")
+        banner.warning("Something went wrong. Try again.")
 
     # create two columns in the buttons container
     col1, col2 = buttons.columns(2, gap="small")
@@ -504,7 +511,7 @@ def draw_cat_workflow():
     with but2:
         st.button("Start Painting", use_container_width=True, type="primary")
 
-    st.button("Start Over", on_click=clear_session)
+    buttons_low.button("Start Over", on_click=clear_session)
 
     return st.stop()
 
