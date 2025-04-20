@@ -39,7 +39,7 @@ body = st.empty()
 buttons_low = st.empty()
 
 footer_html = """<div style='text-align: center;'>
-  <p><br><br>Developed with Google Gemini️ by <a href='http://petes.tools' target="_blank"> Pete's Tools</a></p>
+  <p><br><br>AI agent built by <a href='http://petes.tools' target="_blank"> Pete's Tools</a> using <a href="https://deepmind.google/technologies/gemini/" target="_blank">Google Gemini️</a> models.</p>
 </div>"""
 
 footer = st.markdown(footer_html, unsafe_allow_html=True)
