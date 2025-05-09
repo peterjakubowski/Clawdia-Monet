@@ -39,7 +39,7 @@ body = st.empty()
 buttons_low = st.empty()
 
 footer_html = """<div style='text-align: center;'>
-  <p><br><br>AI agent built by <a href='http://petes.tools' target="_blank"> Pete's Tools</a> using <a href="https://deepmind.google/technologies/gemini/" target="_blank">Google Gemini️</a> models.</p>
+  <p><br><br>AI agent built by <a href='https://www.petes.tools' target="_blank"> Pete's Tools</a> using <a href="https://deepmind.google/technologies/gemini/" target="_blank">Google Gemini️</a> models.</p>
 </div>"""
 
 footer = st.markdown(footer_html, unsafe_allow_html=True)
@@ -288,16 +288,21 @@ def cat_sketch(_image: Image) -> types.GenerateContentResponse:
     You have been commissioned to paint someone's adored cat or cats.
     Your patron has given you a photo of their cat or cats to sketch from.
     
-    Before you begin painting, you must sketch out the composition.
-    Turn this reference image into a hand drawn image.
+    Before you begin painting, you must turn this reference image into a hand drawn image.
     
     # Rules
     
     * Draw with pencil on brown paper.
     * Be sure to draw the entire scene and background.
-    * The drawing should essentially be a copy of the reference image.
+    * The drawing must be a copy of the reference image.
+    
+    # Response
+    
     * Return the finished drawing.
     * Send a short message to the patron along with your finished work, no more than a sentence.
+    
+    Example 1: Here is the initial sketch of your beautiful cat; I look forward to bringing this composition to life with paint.
+    Example 2: Here is the initial pencil sketch of your elegant white cat, set against the textured blanket, ready for the color to be added.
     
     """)
 
@@ -423,7 +428,7 @@ def upload_workflow():
 
     if (file := body.file_uploader(label="Upload Cat Photo",
                                    accept_multiple_files=False,
-                                   type=['jpg', 'png'],
+                                   type=["jpg", "jpeg", "png"],
                                    key='upload',
                                    # on_change=open_image_workflow(),
                                    label_visibility='hidden')):
