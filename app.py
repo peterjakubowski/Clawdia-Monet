@@ -183,7 +183,7 @@ def cat_check(_image: Image) -> BaseModel:
     # Rules
     
     * I give you an image, you tell me if there's a cat in it.
-    * If there's a cat in the image, then you will be able to paint a picture from the image.
+    * If there's a cat in the image, then you will be able to begin by sketching a picture from the image.
     * If there is not a cat in the image, then the photo is no use to you, since you only paint cats.
     * Send a short message to the patron about their image and what you'll do next.
     * Be creative with your message.
@@ -203,7 +203,7 @@ def cat_check(_image: Image) -> BaseModel:
 
     Example 1: I couldn't find a cat in this image. I only paint cats.
     Example 2: What cute cats! This will be a beautiful painting of a cat!
-    Example 3: Adorable kitten :-) I'll get started on a sketch.
+    Example 3: Adorable kitten :-) I'll get started on a sketch first.
     Example 4: This is an interesting photo, but I don't see any cats! Do you have any photos of cats?
     Example 5: Your cat looks so sweet! 
 
@@ -223,6 +223,51 @@ def cat_check(_image: Image) -> BaseModel:
         raise ae
 
     return _response.parsed
+
+
+def instruct_sketch(_image: Image) -> str:
+    """
+    Write instructions for the artist to sketch the cat in the image.
+
+    :param _image:
+    :return:
+    """
+
+    _sys_inst = Template("""You are an art instructor and excel at writing step-by-step instructions for artists to follow.
+
+    I give you an image, you must write detailed instructions for how to transform the image into a drawing.
+
+    # Rules
+
+    * Focus on instructing how to make a drawing from the image.
+    * Adhere to a traditional style of drawing.
+    * The draw should be done with pencil on brown paper.
+    * Be sure to describe the entire scene and background for the artist to draw.
+    * Instruct the artist to draw all of the details in the composition.
+    * Describe the cat's fur and markings so the artist can draw how the cat looks in real life.
+    * Return only the finished instructions for the artist.
+
+    """)
+
+    _prompt = "Write detailed step-by-step instructions for how to draw this image from observation."
+
+    _config = types.GenerateContentConfig(system_instruction=_sys_inst.render(),
+                                          temperature=0.3,
+                                          top_p=0.90,
+                                          response_modalities=['Text'],
+                                          )
+
+    try:
+        _response = st.session_state.client.models.generate_content(model="gemini-1.5-flash-002",
+                                                                    config=_config,
+                                                                    contents=[_prompt, _image])
+    except errors.APIError as ae:
+        raise ae
+
+    if not _response.text:
+        raise Exception("Drawing instructions error")
+
+    return _response.text
 
 
 def instruct_artist(_image: Image, _sketch: Image) -> str:
@@ -276,25 +321,24 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
     return _response.text
 
 
-def cat_sketch(_image: Image) -> types.GenerateContentResponse:
+def cat_sketch(_instructions: str, _image: Image) -> types.GenerateContentResponse:
     """
     Sketch the cat in the uploaded image.
 
+    :param _instructions:
     :param _image:
     :return:
     """
 
-    _prompt = Template("""You are Clawdia Monet, an artist that loves drawing and painting pictures with cats in them.
-    You have been commissioned to paint someone's adored cat or cats.
-    Your patron has given you a photo of their cat or cats to sketch from.
+    _prompt = Template("""You are Clawdia Monet, an artist that loves drawing cat-themed pictures.
+    You have been commissioned to make a new drawing, your patron has given you a photo to draw from.
     
-    Before you begin painting, you must turn this reference image into a hand drawn image.
+    Observe this photo and generate a hand drawn image from it .
     
     # Rules
     
-    * Draw with pencil on brown paper.
     * Be sure to draw the entire scene and background.
-    * The drawing must be a copy of the reference image.
+    * Draw what you observe in the reference photo .
     
     # Response
     
@@ -304,16 +348,23 @@ def cat_sketch(_image: Image) -> types.GenerateContentResponse:
     Example 1: Here is the initial sketch of your beautiful cat; I look forward to bringing this composition to life with paint.
     Example 2: Here is the initial pencil sketch of your elegant white cat, set against the textured blanket, ready for the color to be added.
     
+    # Instructions you must follow from your assistant
+    
+    {{instructions}}
+    
     """)
 
+    print(_prompt.render(instructions=_instructions))
+
     _config = types.GenerateContentConfig(response_modalities=['Text', 'Image'],
-                                          temperature=0.9,
+                                          temperature=0.6,
                                           top_p=0.95)
 
     _chat = st.session_state.client.chats.create(model="gemini-2.0-flash-exp",
                                                  config=_config)
+
     try:
-        _response = _chat.send_message(message=[_prompt.render(), _image])
+        _response = _chat.send_message(message=[_prompt.render(instructions=_instructions), _image])
 
     except errors.APIError as ae:
         raise ae
@@ -483,7 +534,8 @@ def draw_cat_workflow():
         body.image(st.session_state.image)
         # check if this is a cat
         try:
-            response = cat_sketch(_image=st.session_state.image)
+            instructions = instruct_sketch(_image=st.session_state.image)
+            response = cat_sketch(_image=st.session_state.image, _instructions=instructions)
         except errors.APIError as ae:
             st.warning(ae.message)
             buttons.button("Try Again")
