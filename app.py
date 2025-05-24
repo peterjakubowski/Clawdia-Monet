@@ -645,9 +645,21 @@ def app():
     # Display the page title
     header.title("🎨🐈 Clawdia Monet")
 
-    if st.context.locale.split('-')[-1].lower() != 'us':
-        banner.warning("Sorry, some of this app's features are not supported in your region.")
-        st.stop()
+    # Check the user's locale to make sure it's in the US
+    if st.session_state.get('locale', 'missing') == 'missing':
+        try:
+            locale = st.context.locale.split('-')[-1].lower()
+
+        except Exception as e:
+            banner.warning("Something went wrong 😿")
+            st.stop()
+
+        else:
+            st.session_state['locale'] = locale
+
+        if locale != 'us':
+            banner.warning("Sorry, some of this app's features are not supported in your region 😿.")
+            st.stop()
 
     # Start by uploading a file
     if 'image' not in st.session_state:
