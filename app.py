@@ -360,7 +360,7 @@ def cat_sketch(_instructions: str, _image: Image) -> types.GenerateContentRespon
                                           temperature=0.6,
                                           top_p=0.95)
 
-    _chat = st.session_state.client.chats.create(model="gemini-2.0-flash-exp",
+    _chat = st.session_state.client.chats.create(model="models/gemini-2.0-flash-preview-image-generation",
                                                  config=_config)
 
     try:
@@ -411,7 +411,7 @@ def cat_paint(_instructions: str, _image: Image) -> types.GenerateContentRespons
                                           temperature=0.6,
                                           top_p=0.95)
 
-    _chat = st.session_state.client.chats.create(model="gemini-2.0-flash-exp",
+    _chat = st.session_state.client.chats.create(model="models/gemini-2.0-flash-preview-image-generation",
                                                  config=_config)
 
     try:
