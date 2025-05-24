@@ -645,6 +645,10 @@ def app():
     # Display the page title
     header.title("🎨🐈 Clawdia Monet")
 
+    if st.context.locale.split('-')[-1].lower() != 'us':
+        banner.warning("Sorry, some of this app's features are not supported in your region.")
+        st.stop()
+
     # Start by uploading a file
     if 'image' not in st.session_state:
 
