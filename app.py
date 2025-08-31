@@ -16,7 +16,6 @@ from google.genai import errors
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
-# import time
 
 
 # ========================
@@ -43,8 +42,6 @@ footer_html = """<div style='text-align: center;'>
 </div>"""
 
 footer = st.markdown(footer_html, unsafe_allow_html=True)
-
-# st.write(st.context.cookies.get('ajs_anonymous_id', 'None'))
 
 
 # ========================
@@ -77,11 +74,9 @@ def api_config():
         except FileNotFoundError:
             st.warning('Configuration failed. Missing API key.')
             st.stop()
-        # else:
-            # st.success('api key accessed from st secrets')
+
     if client:
-        # Keep the client and model names in
-        # st.session_state['models'] = genai_model_names
+        # Keep the client in session state
         st.session_state['client'] = client
 
     else:
@@ -354,8 +349,6 @@ def cat_sketch(_instructions: str, _image: Image) -> types.GenerateContentRespon
     
     """)
 
-    print(_prompt.render(instructions=_instructions))
-
     _config = types.GenerateContentConfig(response_modalities=['Text', 'Image'],
                                           temperature=0.6,
                                           top_p=0.95)
@@ -510,8 +503,6 @@ def cat_check_workflow():
             st.session_state.is_cat = response
 
     if st.session_state.is_cat.is_cat:
-        # banner.write(st.session_state.is_cat.observation)
-        # time.sleep(3)
         return st.rerun()
 
     banner.warning(st.session_state.is_cat.observation)
@@ -649,44 +640,32 @@ def app():
     if st.session_state.get('locale', 'missing') == 'missing':
         try:
             locale = st.context.locale.split('-')[-1].lower()
-
         except Exception as e:
             banner.warning("Something went wrong 😿")
             st.stop()
-
         else:
             st.session_state['locale'] = locale
 
         if locale != 'us':
-            banner.warning("Sorry, some of this app's features are not supported in your region 😿.")
+            banner.warning("Sorry, some of this app's features are not supported in your language 😿.")
             st.stop()
 
     # Start by uploading a file
     if 'image' not in st.session_state:
-
         # Run upload workflow
         upload_workflow()
-
     # Check if the image is of a cat
     elif 'image' in st.session_state and 'is_cat' not in st.session_state:
-
         # Run cat check
         cat_check_workflow()
-
     elif 'drawing' not in st.session_state and 'is_cat' in st.session_state and st.session_state.is_cat.is_cat:
-
         # Run drawing agent
         draw_cat_workflow()
-
     elif 'drawing' in st.session_state:
-
         # Start painting!
         paint_cat_workflow()
-
     else:
-
         banner.write("Whoa! How did you end up here?")
-
         buttons.button("Start Over", on_click=clear_session)
 
     return st.stop()
