@@ -19,7 +19,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # --- Create a non-root user ---
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
 USER appuser
 
 # --- Copy only the necessary files from the builder stage
