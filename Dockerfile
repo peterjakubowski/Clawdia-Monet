@@ -18,8 +18,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# --- Create a non-root user ---
-RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
+# --- Create a non-root user WITH a home directory ---
+RUN groupadd --system appgroup && useradd --system --create-home --gid appgroup appuser
+
+# --- Add the user's local bin directory to the PATH ---
+ENV PATH="/home/appuser/.local/bin:${PATH}"
 
 # --- Copy ONLY the production requirements file ---
 COPY --from=builder /app/requirements.txt .
@@ -36,7 +39,7 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Install ONLY production dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
 EXPOSE 8501
 
