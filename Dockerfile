@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # --- Copy the rest of the application
 COPY . .
 
-RUN python util/run.py
+RUN run.py
 
 # --- Final Stage ---
 
