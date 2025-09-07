@@ -28,7 +28,6 @@ COPY --from=builder /app/requirements.txt .
 COPY --from=builder /app/app.py .
 COPY --from=builder /app/.streamlit ./.streamlit/
 COPY --from=builder /app/images ./images/
-COPY --from=builder /app/static ./static/
 
 # --- Change ownership of ALL copied files at once ---
 RUN chown -R appuser:appgroup /app
