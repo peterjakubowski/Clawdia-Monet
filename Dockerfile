@@ -22,9 +22,18 @@ WORKDIR /app
 RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
 USER appuser
 
+# --- Copy ONLY the production requirements file ---
+COPY --from=builder /app/requirements.txt .
+
+# Install ONLY production dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
 # --- Copy only the necessary files from the builder stage
-COPY --from=builder /app /app
+COPY --from=builder /app/app.py .
+COPY --from=builder /app/.streamlit ./.streamlit/
+COPY --from=builder /app/images ./images/
+COPY --from=builder /app/static ./static/
 
 EXPOSE 8501
 
-ENTRYPOINT ["streamlit", "run", "app.py"]
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
