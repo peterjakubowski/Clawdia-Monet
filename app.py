@@ -253,7 +253,7 @@ def instruct_sketch(_image: Image) -> str:
                                           )
 
     try:
-        _response = st.session_state.client.models.generate_content(model="gemini-1.5-flash-002",
+        _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash",
                                                                     config=_config,
                                                                     contents=[_prompt, _image])
     except errors.APIError as ae:
@@ -304,7 +304,7 @@ def instruct_artist(_image: Image, _sketch: Image) -> str:
                                           )
 
     try:
-        _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash-001",
+        _response = st.session_state.client.models.generate_content(model="gemini-2.0-flash",
                                                                     config=_config,
                                                                     contents=[_prompt, _image, _sketch])
     except errors.APIError as ae:
@@ -353,8 +353,10 @@ def cat_sketch(_instructions: str, _image: Image) -> types.GenerateContentRespon
                                           temperature=0.6,
                                           top_p=0.95)
 
-    _chat = st.session_state.client.chats.create(model="models/gemini-2.0-flash-preview-image-generation",
-                                                 config=_config)
+    _chat = st.session_state.client.chats.create(
+        model="models/gemini-2.0-flash-preview-image-generation",
+        config=_config
+    )
 
     try:
         _response = _chat.send_message(message=[_prompt.render(instructions=_instructions), _image])
@@ -404,8 +406,10 @@ def cat_paint(_instructions: str, _image: Image) -> types.GenerateContentRespons
                                           temperature=0.6,
                                           top_p=0.95)
 
-    _chat = st.session_state.client.chats.create(model="models/gemini-2.0-flash-preview-image-generation",
-                                                 config=_config)
+    _chat = st.session_state.client.chats.create(
+        model="models/gemini-2.5-flash-image-preview",  # gemini-2.0-flash-preview-image-generation",
+        config=_config
+    )
 
     try:
         _response = _chat.send_message(message=[_prompt.render(instructions=_instructions), _image])
