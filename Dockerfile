@@ -20,19 +20,24 @@ WORKDIR /app
 
 # --- Create a non-root user ---
 RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
-USER appuser
 
 # --- Copy ONLY the production requirements file ---
 COPY --from=builder /app/requirements.txt .
-
-# Install ONLY production dependencies
-RUN pip install --no-cache-dir -r requirements.txt
 
 # --- Copy only the necessary files from the builder stage
 COPY --from=builder /app/app.py .
 COPY --from=builder /app/.streamlit ./.streamlit/
 COPY --from=builder /app/images ./images/
 COPY --from=builder /app/static ./static/
+
+# --- Change ownership of ALL copied files at once ---
+RUN chown -R appuser:appgroup /app
+
+# -- Switch to the non-root user
+USER appuser
+
+# Install ONLY production dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8501
 
