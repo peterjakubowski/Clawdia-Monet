@@ -53,7 +53,7 @@ def upload_pil_image_to_gcs_and_get_url(
 
     try:
         # --- 2. Initialize the Google Cloud Storage Client ---
-        if settings.GOOGLE_APPLICATION_CREDENTIALS:
+        if settings.GOOGLE_APPLICATION_CREDENTIALS not in ("Missing"):
             storage_client = storage.Client.from_service_account_json(
                 project=project_id,
                 json_credentials_path=settings.GOOGLE_APPLICATION_CREDENTIALS
