@@ -30,6 +30,7 @@ COPY --from=builder /opt/venv /opt/venv
 # --- Copy only the necessary files from the builder stage
 COPY --from=builder /app/app.py .
 COPY --from=builder /app/config.py .
+COPY --from=builder /app/logging_setup.py .
 COPY --from=builder /app/.streamlit ./.streamlit/
 COPY --from=builder /app/images ./images/
 COPY --from=builder /app/storage ./storage/
