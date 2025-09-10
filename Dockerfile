@@ -17,7 +17,6 @@ COPY . .
 RUN python run.py
 
 # --- Final Stage ---
-
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -30,8 +29,10 @@ COPY --from=builder /opt/venv /opt/venv
 
 # --- Copy only the necessary files from the builder stage
 COPY --from=builder /app/app.py .
+COPY --from=builder /app/config.py .
 COPY --from=builder /app/.streamlit ./.streamlit/
 COPY --from=builder /app/images ./images/
+COPY --from=builder /app/storage ./storage/
 
 # --- Change ownership of BOTH the app and the venv ---
 RUN chown -R appuser:appgroup /app /opt/venv
