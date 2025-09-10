@@ -28,7 +28,7 @@ def firebase_app(name: str):
     except ValueError:
         pass
     try:
-        if settings.GOOGLE_APPLICATION_CREDENTIALS:
+        if settings.GOOGLE_APPLICATION_CREDENTIALS not in ("Missing"):
             cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
         else:
             cred = credentials.ApplicationDefault()
