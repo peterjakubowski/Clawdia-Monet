@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """
 
     GOOGLE_API_KEY: str = "Missing"
-    GOOGLE_APPLICATION_CREDENTIALS: str = None
+    GOOGLE_APPLICATION_CREDENTIALS: str = "Missing"
     GEMINI_MODEL_FLASH: str = "models/gemini-2.5-flash"
     GEMINI_MODEL_LITE: str = "models/gemini-2.5-flash-lite"
     GEMINI_MODEL_PRO: str = "models/gemini-2.5-pro"
