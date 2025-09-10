@@ -14,6 +14,10 @@ from google import genai
 from google.genai import types
 from google.genai import errors
 from pydantic import BaseModel
+from storage.db import submit_log
+from storage.gcs import upload_pil_image_to_gcs_and_get_url
+from config import settings
+import uuid
 import os
 from dotenv import load_dotenv
 
@@ -56,8 +60,8 @@ def api_config():
 
     client = None
 
-    # Check env vars for key
-    if key := os.getenv('GOOGLE_API_KEY'):
+    # Check settings for key
+    if key := settings.GOOGLE_API_KEY:
         client = genai.Client(api_key=key)
         # st.success('api key accessed from env var')
     # Check for a .env file and key
@@ -354,7 +358,7 @@ def cat_sketch(_instructions: str, _image: Image) -> types.GenerateContentRespon
                                           top_p=0.95)
 
     _chat = st.session_state.client.chats.create(
-        model="models/gemini-2.0-flash-preview-image-generation",
+        model=settings.GEMINI_MODEL_EXP_IMG_GEN,
         config=_config
     )
 
@@ -407,7 +411,7 @@ def cat_paint(_instructions: str, _image: Image) -> types.GenerateContentRespons
                                           top_p=0.95)
 
     _chat = st.session_state.client.chats.create(
-        model="models/gemini-2.5-flash-image-preview",  # gemini-2.0-flash-preview-image-generation",
+        model=settings.GEMINI_MODEL_EXP_IMG_GEN,  # gemini-2.0-flash-preview-image-generation",
         config=_config
     )
 
@@ -548,6 +552,22 @@ def draw_cat_workflow():
                 st.session_state.drawing = Image.open(BytesIO(_part.inline_data.data))
                 # load the cat sketch
                 body.image(st.session_state.drawing)
+                try:
+                    # upload image to google cloud storage and get public url
+                    artwork_image_url = upload_pil_image_to_gcs_and_get_url(
+                        image_pil=st.session_state.drawing,
+                        bucket_name=settings.GCS_BUCKET_NAME,
+                        destination_blob_name=f"{str(uuid.uuid4())}.png",
+                        project_id=settings.GCP_PROJECT_ID,
+                        image_format='PNG',
+                        content_type='image/png'
+                    )
+                    st.session_state.artwork_image_url = artwork_image_url
+
+                except Exception:
+                    pass
+
+                submit_log(workflow_status="sketch")
 
     if 'drawing' not in st.session_state:
         banner.warning("Something went wrong. Try again.")
@@ -612,6 +632,21 @@ def paint_cat_workflow():
                 st.session_state.painting = Image.open(BytesIO(_part.inline_data.data))
                 # display the cat painting
                 body.image(st.session_state.painting)
+                try:
+                    # upload masked image to google cloud storage and get public url
+                    artwork_image_url = upload_pil_image_to_gcs_and_get_url(
+                        image_pil=st.session_state.painting,
+                        bucket_name=settings.GCS_BUCKET_NAME,
+                        destination_blob_name=f"{str(uuid.uuid4())}.png",
+                        project_id=settings.GCP_PROJECT_ID,
+                        image_format='PNG',
+                        content_type='image/png'
+                    )
+                    st.session_state.artwork_image_url = artwork_image_url
+                except Exception:
+                    pass
+
+                submit_log(workflow_status="painting")
 
         if 'painting' not in st.session_state:
             st.warning("Something went wrong. Try again.")
