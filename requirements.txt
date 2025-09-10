@@ -1,6 +1,9 @@
 streamlit==1.44.0
 google-genai==1.16.1
 pydantic
+pydantic-settings~=2.0.0
+firebase-admin==6.9.0
+google-cloud-storage==3.3.0
 jinja2
 pillow~=11.1.0
 https://github.com/peterjakubowski/Image-Editing-Utilities/archive/refs/heads/main.zip
