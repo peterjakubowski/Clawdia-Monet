@@ -20,7 +20,11 @@ from config import settings
 import uuid
 import os
 from dotenv import load_dotenv
+import logging
+from logging_setup import setup_logging
 
+# Configure logging
+setup_logging()
 
 # ========================
 # === Streamlit Layout ===
@@ -73,9 +77,11 @@ def api_config():
         try:
             client = genai.Client(api_key=st.secrets['GOOGLE_API_KEY'])
         except KeyError:
+            logging.error('Configuration failed. Missing API key.')
             st.warning('Configuration failed. Missing API key.')
             st.stop()
         except FileNotFoundError:
+            logging.error('Configuration failed. Missing API key.')
             st.warning('Configuration failed. Missing API key.')
             st.stop()
 
@@ -84,6 +90,7 @@ def api_config():
         st.session_state['client'] = client
 
     else:
+        logging.warning('Client failed to configure')
         st.warning('Client failed to configure')
         st.stop()
 
@@ -447,12 +454,16 @@ def open_image_workflow():
         try:
             image = ImageOps.exif_transpose(Image.open(st.session_state.file))
         except FileNotFoundError:
+            logging.warning(f"Error: Image file not found {st.session_state.file.name}")
             st.warning(f"Error: Image file not found {st.session_state.file.name}")
         except Image.UnidentifiedImageError:
+            logging.warning(f"Error: Cannot identify image file {st.session_state.file.name}")
             st.warning(f"Error: Cannot identify image file {st.session_state.file.name}")
         except IOError:
+            logging.warning(f"Error: An I/O error occurred when opening {st.session_state.file.name}")
             st.warning(f"Error: An I/O error occurred when opening {st.session_state.file.name}")
         except ValueError:
+            logging.warning("Error: Invalid mode or file path.")
             st.warning("Error: Invalid mode or file path.")
         # add the open image to the chat, display it, and append it to our list of prompt content
         else:
@@ -485,6 +496,7 @@ def upload_workflow():
                                    # on_change=open_image_workflow(),
                                    label_visibility='hidden')):
         st.session_state.file = file
+        logging.info("Opening the uploaded image...")
         open_image_workflow()
 
         return st.rerun()
@@ -498,12 +510,14 @@ def cat_check_workflow():
     """
 
     with banner, st.spinner("Looking over image..."):
+        logging.info("Looking over image to check if there is a cat.")
         # show the image
         body.image(st.session_state.image)
         # check if this is a cat
         try:
             response = cat_check(_image=st.session_state.image)
         except errors.APIError as ae:
+            logging.warning(ae.message)
             banner.warning(ae.message)
             buttons.button('Try Again')
             st.stop()
@@ -513,6 +527,7 @@ def cat_check_workflow():
     if st.session_state.is_cat.is_cat:
         return st.rerun()
 
+    logging.info(st.session_state.is_cat.observation)
     banner.warning(st.session_state.is_cat.observation)
     buttons.button("Start Over", on_click=clear_session)
 
@@ -531,11 +546,14 @@ def draw_cat_workflow():
 
     with working.container(), st.spinner("Sketching...", show_time=True):
         body.image(st.session_state.image)
-        # check if this is a cat
+        # instruct the artist how to draw from the image then sketch an image of the cat
         try:
+            logging.info("Preparing to sketch, generating instructions for the artist...")
             instructions = instruct_sketch(_image=st.session_state.image)
+            logging.info("Generating a sketch from image and instructions...")
             response = cat_sketch(_image=st.session_state.image, _instructions=instructions)
         except errors.APIError as ae:
+            logging.error(ae.message)
             st.warning(ae.message)
             buttons.button("Try Again")
             st.stop()
@@ -549,6 +567,7 @@ def draw_cat_workflow():
             if _part.text is not None:
                 st.write(_part.text)
             if _part.inline_data is not None:
+                logging.info("New drawing generated and ready to display.")
                 st.session_state.drawing = Image.open(BytesIO(_part.inline_data.data))
                 # load the cat sketch
                 body.image(st.session_state.drawing)
@@ -565,11 +584,13 @@ def draw_cat_workflow():
                     st.session_state.artwork_image_url = artwork_image_url
 
                 except Exception:
+                    logging.error("An error occurred while attempting to upload image to cloud storage.")
                     pass
 
                 submit_log(workflow_status="sketch")
 
     if 'drawing' not in st.session_state:
+        logging.warning("Something went wrong. Try again.")
         banner.warning("Something went wrong. Try again.")
 
     # create two columns in the buttons container
@@ -600,22 +621,27 @@ def paint_cat_workflow():
 
     with working.container(), st.spinner("Preparing to paint...", show_time=True):
         # get instructions for the painting
+        logging.info("Preparing to paint, generating instructions for the artist...")
         try:
             instructions = instruct_artist(_image=st.session_state.image, _sketch=st.session_state.drawing)
         except errors.APIError as ae:
+            logging.error(ae.message)
             banner.warning(ae.message)
             buttons.button("Try Again")
             st.stop()
         except Exception as ex:
+            logging.error(ex)
             banner.warning(ex)
             buttons.button("Try Again")
             st.stop()
 
     with working.container(), st.spinner("Painting...", show_time=True):
         # generate the painting
+        logging.info("Generating a painting from sketch and instructions...")
         try:
             response = cat_paint(_instructions=instructions, _image=st.session_state.drawing)
         except errors.APIError as ae:
+            logging.error(ae.message)
             banner.warning(ae.message)
             buttons.button("Try Again")
             st.stop()
@@ -628,6 +654,7 @@ def paint_cat_workflow():
             if _part.text is not None:
                 st.write(_part.text.strip())
             if _part.inline_data is not None:
+                logging.info("New painting generated and ready to display.")
                 # load the cat painting
                 st.session_state.painting = Image.open(BytesIO(_part.inline_data.data))
                 # display the cat painting
@@ -644,11 +671,13 @@ def paint_cat_workflow():
                     )
                     st.session_state.artwork_image_url = artwork_image_url
                 except Exception:
+                    logging.error("An error occurred while attempting to upload the painting to cloud storage.")
                     pass
 
                 submit_log(workflow_status="painting")
 
         if 'painting' not in st.session_state:
+            logging.warning("Something went wrong and the painting could not be generated.")
             st.warning("Something went wrong. Try again.")
 
     # create two columns in the buttons container
@@ -680,12 +709,14 @@ def app():
         try:
             locale = st.context.locale.split('-')[-1].lower()
         except Exception as e:
+            logging.error("Something went wrong 😿")
             banner.warning("Something went wrong 😿")
             st.stop()
         else:
             st.session_state['locale'] = locale
 
         if locale != 'us':
+            logging.info("Sorry, some of this app's features are not supported in your language 😿.")
             banner.warning("Sorry, some of this app's features are not supported in your language 😿.")
             st.stop()
 
@@ -696,14 +727,18 @@ def app():
     # Check if the image is of a cat
     elif 'image' in st.session_state and 'is_cat' not in st.session_state:
         # Run cat check
+        logging.info("Running cat check...")
         cat_check_workflow()
     elif 'drawing' not in st.session_state and 'is_cat' in st.session_state and st.session_state.is_cat.is_cat:
         # Run drawing agent
+        logging.info("Running drawing workflow...")
         draw_cat_workflow()
     elif 'drawing' in st.session_state:
         # Start painting!
+        logging.info("Running painting workflow...")
         paint_cat_workflow()
     else:
+        logging.info("Whoa! How did you end up here?")
         banner.write("Whoa! How did you end up here?")
         buttons.button("Start Over", on_click=clear_session)
 
